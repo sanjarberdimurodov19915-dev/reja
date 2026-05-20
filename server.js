@@ -1,19 +1,16 @@
 const http = require("http");
 const mongodb = require("mongodb");
 
-let db;
 const connectionString =
-  "mongodb+srv://todouser:todo14@cluster0.b91ez.mongodb.net/Reja?authSource=admin&replicaSet=atlas-1371sn-shard-0&w=majority&readPreference=primary&appname=MongoDB%20Compass&retryWrites=true&ssl=true";
+  "mongodb+srv://justin:UkzqPcPOpAodPqxA@cluster0.wbjad.mongodb.net/Reja";
 
 mongodb.connect(
   connectionString,
-  {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  },
+  { useUnifiedTopology: true },
   (err, client) => {
-    if (err) console.log("ERROR on connection MongoDB");
-    else {
+    if (err) {
+      console.log("Error MongoDB connection: stop building backend server");
+    } else {
       console.log("MongoDB connection succeed");
       module.exports = client;
 
@@ -22,9 +19,9 @@ mongodb.connect(
       let PORT = process.env.PORT || 3000;
       server.listen(PORT, function () {
         console.log(
-          `The server is running successfully on port: ${PORT}, http://localhost:${PORT}`
+          `The server is running successfully on http://localhost:${PORT}`,
         );
       });
     }
-  }
+  },
 );

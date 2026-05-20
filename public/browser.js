@@ -1,4 +1,4 @@
-console.log("FrontEnd JS ishga tushdi");
+console.log("Frontend javaScript is running");
 
 function itemTemplate(item) {
   return `<li
@@ -19,9 +19,11 @@ function itemTemplate(item) {
   </li>`;
 }
 
-let createField = document.getElementById("create-field");
+const createField = document.getElementById("create-field");
+const formObject = document.getElementById("create-form");
 
-document.getElementById("create-form").addEventListener("submit", function (e) {
+/* CREATE */
+formObject.addEventListener("submit", function (e) {
   e.preventDefault();
 
   axios
@@ -39,7 +41,7 @@ document.getElementById("create-form").addEventListener("submit", function (e) {
 });
 
 document.addEventListener("click", function (e) {
-  // delete oper
+  /* DELETE */
   if (e.target.classList.contains("delete-me")) {
     if (confirm("Aniq ochirmoqchimisiz?")) {
       axios
@@ -54,12 +56,14 @@ document.addEventListener("click", function (e) {
     }
   }
 
-  // edit oper
+  /* EDIT */
   if (e.target.classList.contains("edit-me")) {
-    let userInput = prompt(
+    const userInput = prompt(
       "O'zgartirish kiriting",
-      e.target.parentElement.parentElement.querySelector(".item-text").innerHTML
+      e.target.parentElement.parentElement.querySelector(".item-text")
+        .innerHTML,
     );
+
     if (userInput) {
       axios
         .post("/edit-item", {
@@ -69,7 +73,7 @@ document.addEventListener("click", function (e) {
         .then((response) => {
           console.log(response.data);
           e.target.parentElement.parentElement.querySelector(
-            ".item-text"
+            ".item-text",
           ).innerHTML = userInput;
         })
         .catch((err) => {
