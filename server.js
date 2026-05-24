@@ -1,27 +1,42 @@
+// server.js
 const http = require("http");
-const mongodb = require("mongodb");
+const { MongoClient } = require("mongodb");
+const app = require("./app");
 
-const connectionString =
-  "mongodb+srv://justin:UkzqPcPOpAodPqxA@cluster0.wbjad.mongodb.net/Reja";
+// 🔴 Atlas’dagi database nomi bilan AYNAN bir xil bo‘lsin
+const DB_NAME = "Reja";
 
-mongodb.connect(
-  connectionString,
-  { useUnifiedTopology: true },
-  (err, client) => {
-    if (err) {
-      console.log("Error MongoDB connection: stop building backend server");
-    } else {
-      console.log("MongoDB connection succeed");
-      module.exports = client;
+const CONNECTION_STRING =
+  "mongodb://sanjar_sam_dev_1191:HOHvYcMPnQQAHVba@ac-tfux50z-shard-00-00.fthdmjx.mongodb.net:27017,ac-tfux50z-shard-00-01.fthdmjx.mongodb.net:27017,ac-tfux50z-shard-00-02.fthdmjx.mongodb.net:27017/Reja?ssl=true&replicaSet=atlas-qzcrmq-shard-0&authSource=admin&retryWrites=true&w=majority&appName=Cluster0";
 
-      const app = require("./app");
-      const server = http.createServer(app);
-      let PORT = process.env.PORT || 3000;
-      server.listen(PORT, function () {
-        console.log(
-          `The server is running successfully on http://localhost:${PORT}`,
-        );
-      });
-    }
-  },
-);
+const client = new MongoClient(CONNECTION_STRING);
+
+async function start() {
+  try {
+    await client.connect();
+    console.log("MongoDB connection succeed");
+
+    // db ni app ga ulab qo‘yamiz
+    app.locals.db = client.db(DB_NAME);
+
+    const server = http.createServer(app);
+    const PORT = process.env.PORT || 3000;
+
+    server.listen(PORT, () => {
+      console.log("Web server starts");
+      console.log(`Server: http://localhost:${PORT}`);
+    });
+  } catch (err) {
+    console.error("MongoDB connection failed:", err);
+    process.exit(1);
+  }
+}
+
+start();
+
+// 🔻 Graceful shutdown
+process.on("SIGINT", async () => {
+  await client.close();
+  console.log("MongoDB connection closed");
+  process.exit(0);
+});

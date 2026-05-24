@@ -1,76 +1,99 @@
-console.log("Web server starts");
+// app.js
 const express = require("express");
+const { ObjectId } = require("mongodb");
+
 const app = express();
 
-/* MongoDB choqirish */
-const clientDB = require("./server");
-const db = clientDB.db();
-const mongodb = require("mongodb");
-
-// 1.KIRISH CODE
+/* =======================
+   MIDDLEWARE
+======================= */
 app.use(express.static("public"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// 2.SESSION CODE
-// 3.VIEW CODE
+/* =======================
+   VIEW ENGINE
+======================= */
 app.set("views", "views");
 app.set("view engine", "ejs");
 
-// 4.ROUTER
-app.post("/create-item", (req, res) => {
-  console.log("post /create-item");
+/* =======================
+   HELPERS
+======================= */
+const getDb = (req) => req.app.locals.db;
 
-  const reja = req.body;
-  db.collection("plans").insertOne(reja, (err, data) => {
-    res.json(data.ops[0]);
-  });
-});
+/* =======================
+   ROUTES
+======================= */
 
-app.post("/delete-item", (req, res) => {
-  console.log("post /delete-item");
-
-  const id = req.body.id;
-  db.collection("plans").deleteOne(
-    { _id: new mongodb.ObjectId(id) },
-    function (err, data) {
-      res.json({ state: "success" });
-    },
-  );
-});
-
-app.post("/edit-item", (req, res) => {
-  console.log("post /edit-item");
-
-  const data = req.body;
-  console.log(data);
-  db.collection("plans").findOneAndUpdate(
-    { _id: new mongodb.ObjectId(data.id) },
-    { $set: { reja: data.new_input } },
-    function (err, data) {
-      res.json({ state: "success" });
-    },
-  );
-});
-
-app.post("/delete-all", (req, res) => {
-  console.log("post /delete-all");
-
-  if (req.body.delete_all) {
-    db.collection("plans").deleteMany(function () {
-      res.json({ state: "hamma rejalar ochirildi" });
-    });
+// HOME
+app.get("/", async (req, res) => {
+  try {
+    const db = getDb(req);
+    const items = await db.collection("plans").find().toArray();
+    res.render("reja", { items });
+  } catch (err) {
+    res.status(500).send("Server error");
   }
 });
 
-app.get("/", function (req, res) {
-  console.log("get /");
+// CREATE
+app.post("/create-item", async (req, res) => {
+  try {
+    const db = getDb(req);
+    const result = await db.collection("plans").insertOne(req.body);
 
-  db.collection("plans")
-    .find()
-    .toArray((err, data) => {
-      res.render("reja", { items: data });
+    res.json({
+      _id: result.insertedId,
+      ...req.body,
     });
+  } catch (err) {
+    res.status(500).json({ error: "Insert failed" });
+  }
+});
+
+// DELETE ONE
+app.post("/delete-item", async (req, res) => {
+  try {
+    const db = getDb(req);
+    await db.collection("plans").deleteOne({
+      _id: new ObjectId(req.body.id),
+    });
+
+    res.json({ state: "success" });
+  } catch (err) {
+    res.status(500).json({ error: "Delete failed" });
+  }
+});
+
+// UPDATE
+app.post("/edit-item", async (req, res) => {
+  try {
+    const db = getDb(req);
+    const { id, new_input } = req.body;
+
+    await db.collection("plans").updateOne(
+      { _id: new ObjectId(id) },
+      { $set: { reja: new_input } },
+    );
+
+    res.json({ state: "success" });
+  } catch (err) {
+    res.status(500).json({ error: "Update failed" });
+  }
+});
+
+// DELETE ALL
+app.post("/delete-all", async (req, res) => {
+  try {
+    if (req.body.delete_all) {
+      const db = getDb(req);
+      await db.collection("plans").deleteMany({});
+      res.json({ state: "hamma rejalar ochirildi" });
+    }
+  } catch (err) {
+    res.status(500).json({ error: "Delete all failed" });
+  }
 });
 
 module.exports = app;
